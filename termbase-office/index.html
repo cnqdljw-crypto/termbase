@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TermBase 术语助手</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 16px;
+            font-size: 13px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        .header h1 { font-size: 16px; font-weight: 600; }
+        .header p { font-size: 11px; opacity: 0.9; }
+        
+        .stats {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .stat {
+            flex: 1;
+            background: var(--card);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .stat strong { font-size: 18px; color: var(--primary); }
+        .stat small { display: block; color: var(--text-muted); font-size: 10px; }
+        
+        .actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .btn-secondary { background: #f1f5f9; color: var(--text); }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 10px 12px 10px 32px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+        }
+        
+        .term-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: var(--card);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .term-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .term-item:last-child { border-bottom: none; }
+        .term-item:hover { background: #f1f5f9; }
+        .term-item .zh { color: #dc2626; font-weight: 600; font-size: 14px; }
+        .term-item .es { color: #059669; font-size: 13px; }
+        .term-item .domain {
+            display: inline-block;
+            padding: 1px 6px;
+            background: var(--primary);
+            color: white;
+            border-radius: 10px;
+            font-size: 9px;
+            margin-left: 6px;
+        }
+        
+        .scan-result {
+            background: #fef3c7;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 12px;
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+        }
+        .empty span { font-size: 32px; display: block; margin-bottom: 8px; }
+        
+        .import-section {
+            background: var(--card);
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .import-section.dragover {
+            border-color: var(--primary);
+            background: #e0e7ff;
+        }
+        .import-section p { font-size: 11px; color: var(--text-muted); }
+        .import-section input { display: none; }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 12px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 200;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+
+        /* 返回主站链接 */
+        .back-link {
+            display: block;
+            text-align: center;
+            padding: 8px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        .back-link:hover {
+            background: #e0e7ff;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← 返回 TermBase 主站</a>
+    
+    <div class="header">
+        <h1>📖 TermBase 术语助手</h1>
+        <p>中↔西班牙语 智能术语识别</p>
+    </div>
+    
+    <div class="stats">
+        <div class="stat">
+            <strong id="termCount">0</strong>
+            <small>术语数</small>
+        </div>
+        <div class="stat">
+            <strong id="highlightCount">0</strong>
+            <small>已高亮</small>
+        </div>
+    </div>
+    
+    <div class="actions">
+        <button class="btn btn-primary" id="scanBtn" onclick="scanDocument()">
+            🔍 扫描文档
+        </button>
+        <button class="btn btn-secondary" onclick="clearHighlights()">
+            🧹 清除高亮
+        </button>
+    </div>
+    
+    <div class="scan-result" id="scanResult" style="display: none;">
+        <span id="scanStatus"></span>
+    </div>
+    
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="搜索术语..." oninput="filterTerms()">
+    </div>
+    
+    <div class="import-section" id="importZone">
+        <p>📁 拖拽 JSON 术语库文件到此处导入</p>
+        <p style="margin-top: 4px; font-size: 10px;">或点击选择文件</p>
+        <input type="file" accept=".json" id="fileInput" onchange="importTerms(event)">
+    </div>
+    
+    <div class="term-list" id="termList">
+        <div class="empty">
+            <span>📭</span>
+            <p>暂无术语库<br><small>导入 JSON 文件添加</small></p>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script>
+        let terms = [];
+        let highlightedRanges = [];
+        
+        const defaultTerms = [
+            { zh: '人工智能', es: 'Inteligencia Artificial', domain: 'AI' },
+            { zh: '机器学习', es: 'Aprendizaje Automático', domain: 'AI' },
+            { zh: '深度学习', es: 'Aprendizaje Profundo', domain: 'AI' },
+            { zh: '大语言模型', es: 'Modelo de Lenguaje Grande', domain: 'AI' },
+            { zh: '云计算', es: 'Computación en la Nube', domain: '云计算' },
+            { zh: '物联网', es: 'Internet de las Cosas', domain: 'IoT' },
+            { zh: '区块链', es: 'Cadena de Bloques', domain: 'Blockchain' },
+            { zh: '碳中和', es: 'Neutralidad de Carbono', domain: '环保' },
+            { zh: '碳达峰', es: 'Pico de Emisiones de Carbono', domain: '环保' },
+            { zh: '可持续发展', es: 'Desarrollo Sostenible', domain: '环保' },
+            { zh: '数字化转型', es: 'Transformación Digital', domain: '商业' },
+            { zh: '一带一路', es: 'Belt and Road', domain: '政策' },
+            { zh: '数字经济', es: 'Economía Digital', domain: '经济' },
+            { zh: '智能制造', es: 'Fabricación Inteligente', domain: '工业' },
+            { zh: '量子计算', es: 'Computación Cuántica', domain: '量子' },
+            { zh: '网络安全', es: 'Seguridad Cibernética', domain: '安全' },
+            { zh: '元宇宙', es: 'Metaverso', domain: '科技' },
+            { zh: '自动驾驶', es: 'Conducción Autónoma', domain: '汽车' },
+            { zh: '氢能', es: 'Energía de Hidrógeno', domain: '能源' },
+            { zh: '碳交易', es: 'Comercio de Carbono', domain: '金融' }
+        ];
+        
+        Office.onReady(info => {
+            if (info.host === Office.HostType.Word) {
+                loadTerms();
+                console.log('TermBase 术语助手已就绪');
+            }
+        });
+        
+        function loadTerms() {
+            const saved = localStorage.getItem('termbase_office_terms');
+            if (saved) {
+                terms = JSON.parse(saved);
+            } else {
+                terms = [...defaultTerms];
+                saveTerms();
+            }
+            renderTerms();
+            updateStats();
+        }
+        
+        function saveTerms() {
+            localStorage.setItem('termbase_office_terms', JSON.stringify(terms));
+            updateStats();
+        }
+        
+        function updateStats() {
+            document.getElementById('termCount').textContent = terms.length;
+        }
+        
+        function renderTerms(filter = '') {
+            const list = document.getElementById('termList');
+            const filtered = terms.filter(t => 
+                t.zh.includes(filter) || (t.es && t.es.toLowerCase().includes(filter.toLowerCase()))
+            );
+            
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="empty"><span>📭</span><p>${filter ? '无匹配术语' : '暂无术语库'}</p></div>`;
+                return;
+            }
+            
+            list.innerHTML = filtered.map((t, i) => `
+                <div class="term-item" onclick="alert('中文: ${t.zh}\\n西班牙语: ${t.es || "-"}')">
+                    <span class="zh">${t.zh}</span>
+                    <span class="es">${t.es || '-'}</span>
+                    ${t.domain ? `<span class="domain">${t.domain}</span>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        function filterTerms() {
+            const filter = document.getElementById('searchInput').value;
+            renderTerms(filter);
+        }
+        
+        async function scanDocument() {
+            const btn = document.getElementById('scanBtn');
+            const resultDiv = document.getElementById('scanResult');
+            const statusSpan = document.getElementById('scanStatus');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>扫描中...';
+            resultDiv.style.display = 'block';
+            statusSpan.textContent = '正在扫描文档...';
+            
+            try {
+                await Word.run(async context => {
+                    const body = context.document.body;
+                    body.load('text');
+                    await context.sync();
+                    
+                    const text = body.text;
+                    let foundCount = 0;
+                    highlightedRanges = [];
+                    
+                    for (const term of terms) {
+                        const searchRange = body.search(term.zh, { matchCase: false });
+                        searchRange.load('count');
+                        await context.sync();
+                        
+                        if (searchRange.count > 0) {
+                            foundCount += searchRange.count;
+                            
+                            for (let i = 0; i < searchRange.count; i++) {
+                                const range = searchRange.items[i];
+                                range.font.highlightColor = '#fbbf24';
+                                range.font.color = '#1e293b';
+                                highlightedRanges.push({ term: term.zh, range: range });
+                            }
+                        }
+                    }
+                    
+                    await context.sync();
+                    document.getElementById('highlightCount').textContent = foundCount;
+                    statusSpan.textContent = `✅ 扫描完成：找到 ${foundCount} 处术语`;
+                });
+                
+                showToast(`扫描完成，${highlightedRanges.length} 处已高亮`, 'success');
+                
+            } catch (error) {
+                console.error('扫描失败:', error);
+                statusSpan.textContent = '❌ 扫描失败: ' + error.message;
+                showToast('扫描失败', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔍 扫描文档';
+                
+                setTimeout(() => {
+                    resultDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        function clearHighlights() {
+            Word.run(async context => {
+                const body = context.document.body;
+                const paragraphs = body.paragraphs;
+                paragraphs.load('text');
+                await context.sync();
+                
+                for (let i = 0; i < paragraphs.count; i++) {
+                    try {
+                        paragraphs.items[i].font.highlightColor = null;
+                    } catch(e) {}
+                }
+                
+                await context.sync();
+                highlightedRanges = [];
+                document.getElementById('highlightCount').textContent = '0';
+                showToast('已清除所有高亮', 'success');
+            });
+        }
+        
+        const importZone = document.getElementById('importZone');
+        const fileInput = document.getElementById('fileInput');
+        
+        importZone.addEventListener('click', () => fileInput.click());
+        importZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            importZone.classList.add('dragover');
+        });
+        importZone.addEventListener('dragleave', () => {
+            importZone.classList.remove('dragover');
+        });
+        importZone.addEventListener('drop', e => {
+            e.preventDefault();
+            importZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                importTermsFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        function importTerms(event) {
+            const file = event.target.files[0];
+            if (file) importTermsFile(file);
+        }
+        
+        function importTermsFile(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    let imported = [];
+                    if (Array.isArray(data)) {
+                        imported = data;
+                    } else if (data.terms) {
+                        imported = data.terms;
+                    } else if (data.termbase) {
+                        imported = data.termbase;
+                    }
+                    
+                    let newCount = 0;
+                    imported.forEach(item => {
+                        if (item.zh && !terms.some(t => t.zh === item.zh)) {
+                            terms.push({
+                                zh: item.zh,
+                                es: item.es || '',
+                                domain: item.domain || '',
+                                notes: item.notes || ''
+                            });
+                            newCount++;
+                        }
+                    });
+                    
+                    saveTerms();
+                    renderTerms();
+                    showToast(`导入成功：${newCount} 个新术语`, 'success');
+                    
+                } catch (err) {
+                    showToast('导入失败：文件格式错误', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function showToast(msg, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
