@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TermBase · 协作科技术语库</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        
+        /* 顶部导航 */
+        header { 
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; padding: 20px 24px; text-align: center;
+            border-radius: 0 0 20px 20px; margin-bottom: 24px;
+        }
+        header h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+        header p { font-size: 14px; opacity: 0.9; }
+        
+        /* 状态栏 */
+        .status-bar {
+            display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+            padding: 12px 16px; background: var(--card); border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .status-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+        .status-badge { 
+            background: var(--primary); color: white; padding: 2px 10px; 
+            border-radius: 20px; font-size: 12px; font-weight: 500;
+        }
+        .mode-badge { background: #10b981; }
+        .mode-badge.local { background: #f59e0b; }
+        
+        /* 主布局 */
+        .main-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; }
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+        
+        /* 卡片 */
+        .card {
+            background: var(--card); border-radius: 16px; padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .card-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .card-title span { font-size: 20px; }
+        
+        /* 输入区域 */
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; }
+        input, select, textarea {
+            width: 100%; padding: 12px 14px; border: 1px solid var(--border);
+            border-radius: 10px; font-size: 14px; font-family: inherit;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+        textarea { resize: vertical; min-height: 100px; }
+        
+        /* 领域选择 */
+        .domain-selector { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .domain-btn {
+            padding: 6px 14px; border: 1px solid var(--border); background: white;
+            border-radius: 20px; font-size: 13px; cursor: pointer; transition: all 0.2s;
+        }
+        .domain-btn:hover { border-color: var(--primary); }
+        .domain-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        /* 自定义领域 */
+        .custom-domain { display: flex; gap: 8px; margin-top: 12px; }
+        .custom-domain input { flex: 1; }
+        .custom-domain button { padding: 8px 16px; background: #f1f5f9; border: none; border-radius: 8px; cursor: pointer; }
+        .custom-domain button:hover { background: #e2e8f0; }
+        
+        /* 按钮 */
+        .btn { padding: 10px 18px; border: none; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .btn-secondary { background: #f1f5f9; color: var(--text); }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-success { background: var(--success); color: white; }
+        
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+        
+        /* 术语列表 */
+        .term-list { display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto; padding-right: 8px; }
+        .term-card {
+            background: #f8fafc; border-radius: 12px; padding: 16px;
+            border: 1px solid var(--border); position: relative;
+        }
+        .term-card:hover { border-color: var(--primary); }
+        .term-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .term-content { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+        .term-lang { font-size: 13px; }
+        .term-lang strong { display: block; font-size: 14px; font-family: 'JetBrains Mono', monospace; }
+        .term-lang.zh { color: #dc2626; }
+        .term-lang.es { color: #059669; }
+        .term-domain { 
+            display: inline-block; padding: 2px 10px; background: var(--primary);
+            color: white; border-radius: 20px; font-size: 11px; margin-bottom: 8px;
+        }
+        .term-notes { font-size: 12px; color: var(--text-muted); background: white; padding: 8px 12px; border-radius: 8px; margin-top: 8px; }
+        .term-actions { display: flex; gap: 6px; }
+        .term-actions button {
+            padding: 4px 10px; font-size: 12px; border: none; border-radius: 6px; cursor: pointer;
+        }
+        .term-actions .edit-btn { background: #e0e7ff; color: var(--primary); }
+        .term-actions .delete-btn { background: #fee2e2; color: var(--danger); }
+        .term-actions .discuss-btn { background: #dcfce7; color: var(--success); }
+        
+        /* 讨论板块 */
+        .discussion-section { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
+        .discussion-item {
+            background: white; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; font-size: 13px;
+        }
+        .discussion-author { font-weight: 500; color: var(--primary); font-size: 12px; }
+        .discussion-text { margin-top: 4px; color: var(--text); }
+        .discussion-add { margin-top: 8px; }
+        .discussion-add input { padding: 8px 12px; font-size: 13px; }
+        .discussion-add button { padding: 8px 12px; font-size: 12px; }
+        
+        /* AI 提取 */
+        .ai-section { background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 16px; border-radius: 12px; margin-top: 16px; }
+        .ai-section h4 { font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .ai-status { font-size: 12px; color: #92400e; margin-top: 8px; }
+        
+        /* 导出选项 */
+        .export-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+        .export-btn { padding: 12px; text-align: center; background: #f1f5f9; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .export-btn:hover { background: var(--primary); color: white; }
+        .export-btn span { display: block; font-size: 18px; margin-bottom: 4px; }
+        .export-btn small { font-size: 11px; }
+        
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; padding: 14px 20px;
+            background: var(--text); color: white; border-radius: 10px;
+            font-size: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 1000;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        
+        /* 空状态 */
+        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+        .empty-state span { font-size: 48px; display: block; margin-bottom: 12px; opacity: 0.5; }
+        
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        
+        .spinner {
+            width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* 模式切换按钮 */
+        .mode-toggle {
+            display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+            border: 2px solid var(--border); background: white; border-radius: 25px;
+            cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.3s;
+        }
+        .mode-toggle:hover { border-color: var(--primary); background: #f8fafc; }
+        .mode-toggle.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .mode-toggle.active .mode-icon { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        /* 协作配置弹窗 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); display: flex; align-items: center;
+            justify-content: center; z-index: 1000; opacity: 0; visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal {
+            background: white; padding: 24px; border-radius: 16px; max-width: 400px;
+            width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal h3 { font-size: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .modal p { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.6; }
+        .modal .btn-group { margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌐 TermBase</h1>
+            <p>中↔西班牙语 协作科技术语库</p>
+        </header>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <button class="mode-toggle" id="modeToggle" onclick="toggleMode()">
+                    <span class="mode-icon" id="modeIcon">💾</span>
+                    <span class="mode-text" id="modeText">本地模式</span>
+                </button>
+            </div>
+            <div class="status-item">📚 <strong id="termCount">0</strong> 条术语</div>
+            <div class="status-item">👥 <strong id="contributorCount">0</strong> 位贡献者</div>
+            <div class="status-item">🏷️ <strong id="domainCount">0</strong> 个领域</div>
+        </div>
+        
+        <div class="main-grid">
+            <!-- 左侧：添加术语 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><span>✏️</span> 添加 / 编辑术语</div>
+                </div>
+                
+                <div class="input-group">
+                    <label>中文术语</label>
+                    <input type="text" id="termZh" placeholder="输入中文术语">
+                </div>
+                
+                <div class="input-group">
+                    <label>Español 西班牙语</label>
+                    <input type="text" id="termEs" placeholder="输入西班牙语术语">
+                </div>
+                
+                <div class="input-group">
+                    <label>所属领域</label>
+                    <div class="domain-selector" id="domainSelector">
+                        <button class="domain-btn active" data-domain="通用">🌐 通用</button>
+                        <button class="domain-btn" data-domain="AI/人工智能">🤖 AI</button>
+                        <button class="domain-btn" data-domain="云计算">☁️ 云计算</button>
+                        <button class="domain-btn" data-domain="网络安全">🔒 安全</button>
+                        <button class="domain-btn" data-domain="软件工程">💻 软件</button>
+                        <button class="domain-btn" data-domain="硬件/芯片">⚡ 硬件</button>
+                        <button class="domain-btn" data-domain="环保/能源">🌱 环保</button>
+                        <button class="domain-btn" data-domain="军事">🎯 军事</button>
+                        <button class="domain-btn" data-domain="医疗">🏥 医疗</button>
+                    </div>
+                    <div class="custom-domain">
+                        <input type="text" id="customDomain" placeholder="自定义领域名称，如：金融、法律...">
+                        <button onclick="addCustomDomain()">➕ 添加</button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>备注说明（可选）</label>
+                    <textarea id="termNotes" placeholder="补充术语的使用场景、注意事项等..."></textarea>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="submitBtn" onclick="submitTerm()">✅ 提交术语</button>
+                    <button class="btn btn-secondary" onclick="clearForm()">🔄 清空</button>
+                </div>
+                
+                <!-- AI 辅助 -->
+                <div class="ai-section">
+                    <h4>🤖 AI 智能术语提取</h4>
+                    <textarea id="aiInput" placeholder="粘贴中文或西班牙语文本，AI 将自动提取专业高频术语..." style="min-height: 120px;"></textarea>
+                    <div style="font-size: 11px; color: #92400e; margin: 8px 0;">
+                        💡 严格术语库：仅包含专业术语（已移除"战略、方案、经济"等生活常用词）
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="aiExtract()" id="aiBtn">🚀 智能提取术语</button>
+                    </div>
+                    <div id="aiProgress" style="display: none; margin-top: 12px;">
+                        <div style="background: #fef3c7; padding: 10px; border-radius: 8px; font-size: 12px;">
+                            <div id="aiStep1" style="color: #94a3b8;">○ 步骤1: 分析文本...</div>
+                            <div id="aiStep2" style="color: #94a3b8;">○ 步骤2: 统计词频...</div>
+                            <div id="aiStep3" style="color: #94a3b8;">○ 步骤3: 智能筛选...</div>
+                            <div id="aiStep4" style="color: #94a3b8;">○ 步骤4: 翻译对照...</div>
+                        </div>
+                    </div>
+                    <p class="ai-status" id="aiStatus">✅ 基于术语库精确匹配，只提取完整单一名词</p>
+                </div>
+            </div>
+            
+            <!-- 右侧：术语库 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><span>📚</span> 术语库 <small id="filterInfo" style="font-weight: normal; color: var(--text-muted);"></small></div>
+                    <select id="domainFilter" onchange="filterByDomain()" style="width: auto; padding: 6px 12px;">
+                        <option value="">全部领域</option>
+                    </select>
+                </div>
+                
+                <div class="term-list" id="termList">
+                    <div class="empty-state">
+                        <span>📭</span>
+                        <p>术语库为空<br><small>成为第一个贡献者！</small></p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                    <label style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: block;">下载术语库</label>
+                    <div class="export-grid">
+                        <div class="export-btn" onclick="exportData('xlsx')"><span>📊</span><small>XLS</small></div>
+                        <div class="export-btn" onclick="exportData('csv')"><span>📄</span><small>CSV</small></div>
+                        <div class="export-btn" onclick="exportData('tbx')"><span>📋</span><small>TBX</small></div>
+                        <div class="export-btn" onclick="exportData('json')"><span>📦</span><small>JSON</small></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <!-- 协作模式配置弹窗 -->
+    <div class="modal-overlay" id="cloudModal">
+        <div class="modal">
+            <h3>☁️ 协作模式配置</h3>
+            <p>输入腾讯云 CloudBase 环境 ID，开启多人协作。数据将保存在云端，所有用户可实时共享术语库。</p>
+            <div class="input-group">
+                <label>CloudBase 环境 ID</label>
+                <input type="text" id="envId" placeholder="例如: env-xxxxxx">
+            </div>
+            <p style="font-size: 11px; color: #94a3b8;">可在腾讯云 CloudBase 控制台 → 环境概览中找到</p>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="connectCloud()">连接云端</button>
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ========== 数据存储 ==========
+        let terms = JSON.parse(localStorage.getItem('termbase_terms')) || [];
+        let customDomains = JSON.parse(localStorage.getItem('termbase_domains')) || [];
+        let currentDomain = '';
+        let editingId = null;
+        
+        // ========== 模式管理 ==========
+        let isCloudMode = localStorage.getItem('termbase_cloud_mode') === 'true';
+        let cloudEnvId = localStorage.getItem('termbase_cloud_envid') || '';
+        
+        function toggleMode() {
+            if (isCloudMode) {
+                // 切换到本地模式
+                if (confirm('确定切换到本地模式？协作数据将保留在云端，本地数据将被加载。')) {
+                    switchToLocalMode();
+                }
+            } else {
+                // 切换到协作模式
+                if (cloudEnvId) {
+                    // 已有配置，直接切换
+                    switchToCloudMode();
+                } else {
+                    // 弹出配置框
+                    openModal();
+                }
+            }
+        }
+        
+        function switchToLocalMode() {
+            isCloudMode = false;
+            localStorage.setItem('termbase_cloud_mode', 'false');
+            updateModeUI();
+            loadFromStorage();
+            showToast('已切换到本地模式', 'success');
+        }
+        
+        function switchToCloudMode() {
+            isCloudMode = true;
+            localStorage.setItem('termbase_cloud_mode', 'true');
+            updateModeUI();
+            loadFromCloud();
+            showToast('已切换到协作模式 ☁️', 'success');
+        }
+        
+        function updateModeUI() {
+            const btn = document.getElementById('modeToggle');
+            const icon = document.getElementById('modeIcon');
+            const text = document.getElementById('modeText');
+            
+            if (isCloudMode) {
+                btn.classList.add('active');
+                icon.textContent = '☁️';
+                text.textContent = '协作模式';
+            } else {
+                btn.classList.remove('active');
+                icon.textContent = '💾';
+                text.textContent = '本地模式';
+            }
+        }
+        
+        function openModal() {
+            document.getElementById('cloudModal').classList.add('show');
+            document.getElementById('envId').value = cloudEnvId;
+        }
+        
+        function closeModal() {
+            document.getElementById('cloudModal').classList.remove('show');
+        }
+        
+        function connectCloud() {
+            const envId = document.getElementById('envId').value.trim();
+            if (!envId) {
+                showToast('请输入环境 ID', 'error');
+                return;
+            }
+            
+            cloudEnvId = envId;
+            localStorage.setItem('termbase_cloud_envid', envId);
+            closeModal();
+            switchToCloudMode();
+        }
+        
+        async function loadFromCloud() {
+            // TODO: 实现云端数据加载
+            // 暂时显示提示
+            document.getElementById('aiStatus').textContent = '☁️ 协作模式待配置云端';
+            showToast('云端同步功能开发中...', '');
+        }
+        
+        // ========== 初始化 ==========
+        function init() {
+            updateModeUI(); // 初始化模式显示
+            renderTerms();
+            updateStats();
+            renderDomainFilter();
+            loadCustomDomains();
+            
+            // 如果是协作模式，尝试加载云端数据
+            if (isCloudMode && cloudEnvId) {
+                loadFromCloud();
+            }
+            
+            // 绑定领域选择
+            document.querySelectorAll('.domain-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+        }
+        
+        // ========== 工具函数 ==========
+        function showToast(msg, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        function saveToStorage() {
+            if (!isCloudMode) {
+                localStorage.setItem('termbase_terms', JSON.stringify(terms));
+            }
+            updateStats();
+        }
+        
+        function loadFromStorage() {
+            terms = JSON.parse(localStorage.getItem('termbase_terms')) || [];
+            renderTerms();
+            renderDomainFilter();
+            updateStats();
+        }
+        
+        function updateStats() {
+            document.getElementById('termCount').textContent = terms.length;
+            document.getElementById('contributorCount').textContent = 
+                [...new Set(terms.map(t => t.author || '匿名'))].length;
+            document.getElementById('domainCount').textContent = 
+                [...new Set(terms.map(t => t.domain))].length;
+        }
+        
+        function getSelectedDomain() {
+            const active = document.querySelector('.domain-btn.active');
+            return active ? active.dataset.domain : '通用';
+        }
+        
+        // ========== 自定义领域 ==========
+        function addCustomDomain() {
+            const input = document.getElementById('customDomain');
+            const name = input.value.trim();
+            if (!name) return;
+            
+            if (customDomains.includes(name)) {
+                showToast('该领域已存在', 'error');
+                return;
+            }
+            
+            customDomains.push(name);
+            localStorage.setItem('termbase_domains', JSON.stringify(customDomains));
+            
+            const selector = document.getElementById('domainSelector');
+            const btn = document.createElement('button');
+            btn.className = 'domain-btn';
+            btn.dataset.domain = name;
+            btn.textContent = '🏷️ ' + name;
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+            selector.appendChild(btn);
+            
+            // 同时添加到筛选器
+            const filter = document.getElementById('domainFilter');
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            filter.appendChild(opt);
+            
+            input.value = '';
+            showToast('已添加领域: ' + name, 'success');
+        }
+        
+        function loadCustomDomains() {
+            customDomains.forEach(name => {
+                const selector = document.getElementById('domainSelector');
+                if (!selector.querySelector(`[data-domain="${name}"]`)) {
+                    const btn = document.createElement('button');
+                    btn.className = 'domain-btn';
+                    btn.dataset.domain = name;
+                    btn.textContent = '🏷️ ' + name;
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                    selector.appendChild(btn);
+                }
+                
+                const filter = document.getElementById('domainFilter');
+                if (!filter.querySelector(`option[value="${name}"]`)) {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    filter.appendChild(opt);
+                }
+            });
+        }
+        
+        // ========== 术语操作 ==========
+        function submitTerm() {
+            const zh = document.getElementById('termZh').value.trim();
+            const es = document.getElementById('termEs').value.trim();
+            const domain = getSelectedDomain();
+            const notes = document.getElementById('termNotes').value.trim();
+            
+            if (!zh && !es) {
+                showToast('请至少填写一种语言', 'error');
+                return;
+            }
+            
+            if (editingId) {
+                // 编辑模式
+                const idx = terms.findIndex(t => t.id === editingId);
+                if (idx !== -1) {
+                    terms[idx] = { ...terms[idx], zh, es, domain, notes };
+                    showToast('术语已更新', 'success');
+                }
+                editingId = null;
+                document.getElementById('submitBtn').textContent = '✅ 提交术语';
+            } else {
+                // 新增
+                const term = { id: generateId(), zh, es, domain, notes, discussions: [], createdAt: new Date().toISOString() };
+                terms.unshift(term);
+                showToast('术语已添加', 'success');
+            }
+            
+            saveToStorage();
+            renderTerms();
+            clearForm();
+        }
+        
+        function editTerm(id) {
+            const term = terms.find(t => t.id === id);
+            if (!term) return;
+            
+            document.getElementById('termZh').value = term.zh || '';
+            document.getElementById('termEs').value = term.es || '';
+            document.getElementById('termNotes').value = term.notes || '';
+            
+            // 选中领域
+            document.querySelectorAll('.domain-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.domain === term.domain);
+            });
+            
+            editingId = id;
+            document.getElementById('submitBtn').textContent = '💾 保存修改';
+            document.getElementById('submitBtn').classList.add('btn-success');
+            
+            // 滚动到顶部
+            document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function deleteTerm(id) {
+            if (!confirm('确定删除这条术语？')) return;
+            terms = terms.filter(t => t.id !== id);
+            saveToStorage();
+            renderTerms();
+            showToast('已删除');
+        }
+        
+        function clearForm() {
+            document.getElementById('termZh').value = '';
+            document.getElementById('termEs').value = '';
+            document.getElementById('termNotes').value = '';
+            document.querySelectorAll('.domain-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-domain="通用"]').classList.add('active');
+            editingId = null;
+            document.getElementById('submitBtn').textContent = '✅ 提交术语';
+            document.getElementById('submitBtn').classList.remove('btn-success');
+        }
+        
+        // ========== 讨论功能 ==========
+        function toggleDiscussion(id) {
+            const card = document.querySelector(`[data-id="${id}"]`);
+            const section = card.querySelector('.discussion-section');
+            if (section) {
+                section.style.display = section.style.display === 'none' ? 'block' : 'none';
+                return;
+            }
+            
+            const term = terms.find(t => t.id === id);
+            if (!term) return;
+            
+            const html = `
+                <div class="discussion-section">
+                    ${(term.discussions || []).map(d => `
+                        <div class="discussion-item">
+                            <span class="discussion-author">${d.author || '匿名'}</span>
+                            <p class="discussion-text">${d.text}</p>
+                        </div>
+                    `).join('')}
+                    <div class="discussion-add">
+                        <input type="text" placeholder="添加讨论或例句..." onkeypress="if(event.key==='Enter')addDiscussion('${id}',this)">
+                        <button onclick="addDiscussion('${id}',this.previousElementSibling)">发送</button>
+                    </div>
+                </div>
+            `;
+            card.insertAdjacentHTML('beforeend', html);
+        }
+        
+        function addDiscussion(id, input) {
+            const text = input.value.trim();
+            if (!text) return;
+            
+            const term = terms.find(t => t.id === id);
+            if (!term) return;
+            
+            if (!term.discussions) term.discussions = [];
+            term.discussions.push({ text, author: '访客', time: new Date().toLocaleString() });
+            
+            saveToStorage();
+            toggleDiscussion(id);
+            toggleDiscussion(id);
+            showToast('讨论已添加');
+        }
+        
+        // ========== 渲染 ==========
+        function renderTerms() {
+            const container = document.getElementById('termList');
+            let filtered = currentDomain ? terms.filter(t => t.domain === currentDomain) : terms;
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <span>📭</span>
+                        <p>${currentDomain ? '该领域暂无术语' : '术语库为空'}<br><small>成为第一个贡献者！</small></p>
+                    </div>`;
+                return;
+            }
+            
+            document.getElementById('filterInfo').textContent = currentDomain ? `（${currentDomain}）` : '';
+            
+            container.innerHTML = filtered.map(term => `
+                <div class="term-card" data-id="${term.id}">
+                    <div class="term-header">
+                        <span class="term-domain">${term.domain}</span>
+                        <div class="term-actions">
+                            <button class="edit-btn" onclick="editTerm('${term.id}')">✏️</button>
+                            <button class="discuss-btn" onclick="toggleDiscussion('${term.id}')">💬</button>
+                            <button class="delete-btn" onclick="deleteTerm('${term.id}')">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="term-content">
+                        <div class="term-lang zh">
+                            <small>🇨🇳 中文</small>
+                            <strong>${term.zh || '-'}</strong>
+                        </div>
+                        <div class="term-lang es">
+                            <small>🇪🇸 Español</small>
+                            <strong>${term.es || '-'}</strong>
+                        </div>
+                    </div>
+                    ${term.notes ? `<div class="term-notes">📝 ${term.notes}</div>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        function filterByDomain() {
+            currentDomain = document.getElementById('domainFilter').value;
+            renderTerms();
+        }
+        
+        function renderDomainFilter() {
+            const filter = document.getElementById('domainFilter');
+            const domains = [...new Set(terms.map(t => t.domain))];
+            filter.innerHTML = '<option value="">全部领域</option>';
+            domains.forEach(d => {
+                filter.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+        }
+        
+        // ========== AI 提取（智能专业术语识别）==========
+        async function aiExtract() {
+            const input = document.getElementById('aiInput').value.trim();
+            if (!input) {
+                showToast('请输入要提取的文本', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('aiBtn');
+            const progress = document.getElementById('aiProgress');
+            const status = document.getElementById('aiStatus');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> 分析中...';
+            progress.style.display = 'block';
+            status.textContent = '🔍 正在识别专业术语...';
+            
+            const setStep = (num, text) => {
+                document.getElementById('aiStep' + num).textContent = '✓ ' + text;
+                document.getElementById('aiStep' + num).style.color = '#10b981';
+            };
+            
+            try {
+                // 步骤1: 分析文本
+                setStep(1, '步骤1: 分析文本结构...');
+                await new Promise(r => setTimeout(r, 300));
+                
+                // 1. 智能提取高频专业术语
+                const extracted = extractProfessionalTerms(input);
+                setStep(1, `步骤1: 分析完成，找到 ${extracted.length} 个候选词`);
+                
+                if (extracted.length === 0) {
+                    status.textContent = '⚠️ 未识别到明显的专业术语';
+                    showToast('未找到专业术语，请尝试更长或更专业的文本', 'error');
+                    return;
+                }
+                
+                // 步骤2: 词频统计
+                setStep(2, '步骤2: 统计词频中...');
+                await new Promise(r => setTimeout(r, 200));
+                setStep(2, '步骤2: 词频统计完成');
+                
+                // 步骤3: 智能筛选
+                setStep(3, '步骤3: 筛选专业术语...');
+                await new Promise(r => setTimeout(r, 200));
+                setStep(3, '步骤3: 筛选完成');
+                
+                // 步骤4: 翻译
+                setStep(4, '步骤4: 正在翻译对照...');
+                btn.innerHTML = '<span class="spinner"></span> 翻译中...';
+                status.textContent = `📝 找到 ${extracted.length} 个候选术语，正在翻译...`;
+                
+                const results = await translateTerms(extracted);
+                setStep(4, '步骤4: 翻译完成');
+                
+                // 3. 添加到术语库
+                let added = 0;
+                results.forEach(r => {
+                    const exists = terms.some(t => 
+                        (t.zh && t.zh === r.zh) || (t.es && t.es === r.es)
+                    );
+                    if (!exists && (r.zh || r.es)) {
+                        terms.push({
+                            id: generateId(),
+                            zh: r.zh,
+                            es: r.es,
+                            domain: getSelectedDomain(),
+                            notes: `🤖 出现频率: ${r.freq}次 | ${r.reason}`,
+                            discussions: [],
+                            createdAt: new Date().toISOString()
+                        });
+                        added++;
+                    }
+                });
+                
+                saveToStorage();
+                renderTerms();
+                renderDomainFilter();
+                
+                status.textContent = `✅ 提取完成：${extracted.length}个候选 → ${added}个新增`;
+                showToast(`提取完成，添加 ${added} 个术语`, 'success');
+                
+                // 3秒后隐藏进度
+                setTimeout(() => {
+                    progress.style.display = 'none';
+                    // 重置步骤显示
+                    for (let i = 1; i <= 4; i++) {
+                        document.getElementById('aiStep' + i).textContent = '○ 步骤' + i + ': ...';
+                        document.getElementById('aiStep' + i).style.color = '#94a3b8';
+                    }
+                }, 3000);
+                
+            } catch (err) {
+                status.textContent = '❌ 提取失败: ' + err.message;
+                showToast('提取失败', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 智能提取术语';
+            }
+        }
+        
+        // 停用词表（日常不常用到的词会被过滤）
+        const STOP_WORDS_ZH = new Set([
+            '的', '是', '在', '和', '了', '有', '我', '你', '他', '她', '它', '们',
+            '这', '那', '个', '为', '与', '或', '但', '而', '以', '及', '等', '将',
+            '其', '所', '中', '上', '下', '来', '去', '到', '从', '向', '对', '把',
+            '被', '由', '用', '让', '给', '同', '跟', '比', '着', '过', '会', '能',
+            '可以', '可能', '应该', '必须', '需要', '已经', '正在', '将要', '已经',
+            '一个', '一些', '一定', '一样', '一直', '一起', '因为', '所以', '如果',
+            '虽然', '但是', '而且', '或者', '关于', '对于', '通过', '根据', '按照',
+            '为了', '由于', '随着', '除了', '包括', '就是', '不是', '也是', '还是',
+            '大家', '各种', '各种', '每个', '任何', '所有', '本', '该', '某', '各',
+            '每', '之', '第', '更', '最', '非常', '特别', '一般', '主要', '其他',
+            '另外', '其中', '此外', '同时', '首先', '然后', '最后', '以及', '以及',
+            '今天', '明天', '昨天', '现在', '以前', '以后', '当时', '后来', '最近',
+            '很多', '不少', '一些', '有的', '有的', '没有', '不会', '不要', '不能'
+        ]);
+        
+        const STOP_WORDS_ES = new Set([
+            'el', 'la', 'los', 'las', 'de', 'en', 'y', 'que', 'es', 'son', 'para', 'por',
+            'con', 'del', 'al', 'se', 'lo', 'su', 'una', 'uno', 'este', 'esta', 'ese', 'esa',
+            'un', 'una', 'del', 'como', 'más', 'pero', 'sus', 'le', 'ya', 'o', 'este', 'si',
+            'me', 'sin', 'sobre', 'ser', 'tiene', 'muy', 'también', 'hasta', 'desde',
+            'durante', 'entre', 'contra', 'según', 'bajo', 'ante', 'tras', 'tras', 'hacia',
+            'cada', 'cada', 'todo', 'toda', 'todos', 'todas', 'otro', 'otra', 'otros',
+            'otras', 'mismo', 'misma', 'mucho', 'mucha', 'muchos', 'muchas', 'poco', 'poca',
+            'pocos', 'pocas', 'bueno', 'buena', 'buenos', 'buenas', 'malo', 'mala', 'primero',
+            'segundo', 'último', 'última', 'nuevo', 'nueva', 'nuevos', 'nuevas', 'viejo',
+            'vieja', 'pequeño', 'pequeña', 'gran', 'grande', 'mejor', 'peor', 'más',
+            'menos', 'mucho', 'poco', 'tan', 'tanto', 'cuanto', 'cuando', 'donde', 'como',
+            'porque', 'aunque', 'sin embargo', 'además', 'así', 'ahora', 'entonces', 'después',
+            'antes', 'siempre', 'nunca', 'también', 'tampoco', 'solo', 'sólo', 'solo'
+        ]);
+        
+        // 专业术语模式（这些组合通常是专业术语）
+        const TERM_PATTERNS_ZH = [
+            /[\u4e00-\u9fa5]{2,8}(?:技术|系统|政策|战略|方案|规划|标准|规范|协议|机制|模式|策略|方法|理论|原则|体系|工程|计划|项目|方案|指标|指数|系数|率|比|量|度)/g,
+            /[\u4e00-\u9fa5]{2,6}(?:化|性|型|式|法|术|学|论|观|派|制|度|权|益|费|税|金|资|源|能|量|质|效|益|率)/g,
+            /[\u4e00-\u9fa5]{2,6}(?:领域|行业|部门|机构|组织|企业|公司|单位|项目|工程|设施|设备|装置|装备|产品|商品|服务|业务|市场|行业)/g,
+            /[\u4e00-\u9fa5]{2,6}(?:信息|数据|网络|数字|智能|自动|远程|虚拟|混合|云端|边缘|端侧|芯片|处理器|服务器|平台|系统|架构|结构|模块|组件|接口|协议)/g,
+            /第[一二三四五六七八九十百千万\d]+[\u4e00-\u9fa5]{1,3}/g,
+        ];
+        
+        /**
+         * 提取纯净的单一术语名词
+         * 策略：基于预定义术语库 + 严格匹配（只保留真正专业的术语）
+         */
+        function extractProfessionalTerms(text) {
+            const hasChinese = /[\u4e00-\u9fa5]/.test(text);
+            
+            if (!hasChinese) {
+                // 西班牙语处理
+                const wordCount = {};
+                const words = text.toLowerCase().match(/\b[a-záéíóúüñ]{3,}\b/g) || [];
+                words.forEach(w => {
+                    if (!STOP_WORDS_ES.has(w)) {
+                        wordCount[w] = (wordCount[w] || 0) + 1;
+                    }
+                });
+                return Object.entries(wordCount)
+                    .filter(([_, freq]) => freq >= 2)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 20)
+                    .map(([word, freq]) => ({ zh: word, freq, reason: freq > 3 ? '高频词汇' : '识别词汇' }));
+            }
+            
+            // ========== 中文处理 ==========
+            // 严格的专业术语库（已移除生活常用词如"战略、方案、经济、社会"等）
+            const pureTerms = new Set([
+                // 🤖 AI/科技 - 核心术语
+                '人工智能', '机器学习', '深度学习', '神经网络', '卷积神经网络', '循环神经网络',
+                '生成式AI', '大语言模型', 'ChatGPT', '自然语言处理', '计算机视觉', '语音识别',
+                '大数据', '云计算', '边缘计算', '分布式计算', '并行计算',
+                '物联网', '工业互联网', '车联网', '智能家居', '智慧城市',
+                '区块链', '比特币', '以太坊', '智能合约', '去中心化', 'NFT', 'Web3',
+                '虚拟现实', '增强现实', '混合现实', '元宇宙', '数字孪生',
+                '5G', '6G', '物联网', '量子通信', '卫星互联网',
+                '量子计算', '量子力学', '量子密钥', '量子芯片',
+                '芯片', '处理器', 'GPU', 'CPU', 'TPU', 'NPU', 'SOC芯片', '光刻机',
+                '服务器', '数据中心', '超算中心', '算力', '存储',
+                '操作系统', '数据库', '中间件', 'API接口', '微服务', '容器化', 'Kubernetes',
+                '开源', '闭源', 'SaaS', 'PaaS', 'IaaS', '云原生',
+                '网络安全', '信息安全', '数据安全', '隐私计算', '同态加密', '零知识证明',
+                '身份认证', '数字签名', '防火墙', '入侵检测', '漏洞扫描',
+                '自动化', '智能化', '数字化转型', '信息化建设', '两化融合',
+                
+                // ⚡ 能源/环保 - 核心术语
+                '碳中和', '碳达峰', '碳交易', '碳市场', '碳排放权', '碳配额', 'CCER',
+                '碳足迹', '碳核算', '碳审计', '碳核查', '碳标签',
+                '可再生能源', '清洁能源', '绿色能源', '新能源', '替代能源',
+                '太阳能', '光伏', '风电', '海上风电', '光热发电', '生物质能', '地热能', '海洋能',
+                '氢能', '绿氢', '灰氢', '蓝氢', '电解水制氢', '燃料电池',
+                '储能', '锂电池', '磷酸铁锂', '钠离子电池', '固态电池', '液流电池', '抽水蓄能', '压缩空气储能',
+                '新型电力系统', '智能电网', '特高压', '直流输电', '配电网', '微电网', '虚拟电厂',
+                '核能', '核电', '核聚变', '核裂变', '小型模块化反应堆',
+                '气候变化', '温室气体', '全球变暖', '《巴黎协定》', '碳定价',
+                '可持续发展', 'ESG', '绿色金融', '绿色信贷', '绿色债券', '碳金融',
+                '循环经济', '低碳经济', '生态文明', '绿色发展', '节能减排',
+                '生态保护', '生物多样性', '自然保护区', '湿地保护', '荒漠化防治',
+                '污染防治', '大气污染', '水污染', '土壤污染', '固废处理', '垃圾分类', '污水处理',
+                
+                // 💰 经济/商业 - 专业术语
+                '数字经济', '平台经济', '共享经济', '流量经济', '体验经济', '知识经济',
+                '产业链', '供应链', '价值链', '创新链', '供应链金融', '产业链协同',
+                '商业模式', '盈利模式', 'O2O', 'C2M', 'B2B', 'B2C', 'C2C',
+                '并购重组', 'IPO', '市值管理', '股权激励', '风险投资', '私募股权',
+                '供给侧改革', '需求侧改革', '结构性改革', '要素市场化', '混合所有制',
+                '高质量发展', '新质生产力', '现代化产业体系', '专精特新', '瞪羚企业',
+                '一带一路', '丝路电商', '亚投行', 'RCEP', 'CEP', 'FTA',
+                '汇率风险', '外汇储备', '跨境支付', '数字货币', '人民币国际化',
+                
+                // 🏛️ 政策/国际 - 专业术语
+                '多边主义', '单边主义', '区域一体化', '全球化', '逆全球化',
+                '全球治理', '南南合作', '南北对话', 'G20', 'APEC', 'WTO', 'UN',
+                '气候治理', '能源转型', '绿色贸易', '碳关税', '生态外交',
+                '联合国', '欧盟', '北约', '上合组织', '金砖国家', 'G7',
+                '制裁', '禁运', '贸易战', '技术封锁', '出口管制',
+                '半导体', '光刻设备', '高端芯片', '先进制程', '成熟制程',
+                
+                // 🏙️ 社会/民生 - 专业术语
+                '智慧城市', '数字政务', '一体化政务服务', '最多跑一次', '一网通办',
+                '智慧医疗', '远程医疗', '互联网医疗', '电子健康码', '医疗大数据',
+                '智慧教育', '在线教育', '智慧校园', 'AI教育', '教育数字化',
+                '智慧交通', '自动驾驶', '车路协同', '智能网联汽车', '无人驾驶',
+                '智慧社区', '网格化管理', '数字社区', '社区治理',
+                '社会保障', '养老保险', '医疗保险', '失业保险', '生育保险',
+                '乡村振兴', '数字乡村', '智慧农业', '农村电商', '现代农业',
+                
+                // 🔬 技术/工程 - 专业术语
+                '智能制造', '工业4.0', '工业互联网', '数字化车间', '智能工厂',
+                '3D打印', '增材制造', '数控机床', '柔性制造', '协同制造',
+                '新材料', '石墨烯', '碳纤维', '超材料', '纳米材料', '生物材料',
+                '基因工程', '细胞工程', '蛋白质工程', '合成生物学', '基因编辑', 'CRISPR',
+                '航空航天', '卫星导航', '北斗系统', 'GPS', '深空探测', '探月工程', '火星探测',
+                '深海探测', '海洋工程', '极地科考',
+                '高铁技术', '磁悬浮', '超级高铁', '真空管道',
+                'BIM技术', '装配式建筑', '绿色建筑', '智能建筑',
+                
+                // 📊 研究/方法 - 专业术语
+                '大数据分析', '数据挖掘', '机器视觉', '知识图谱', '推荐算法',
+                '舆情分析', '情感分析', '自然语言理解', '机器翻译', '语音合成',
+                '实验设计', '随机对照试验', '双盲实验', '田野调查', '案例研究',
+                '回归分析', '聚类分析', '因子分析', '主成分分析', '时间序列分析',
+                '专利分析', '技术路线图', '竞品分析', '市场调研', '用户画像',
+                'SWOT分析', 'PEST分析', '波特五力', '价值链分析', '商业模式画布'
+            ]);
+            
+            // 2. 从文本中匹配术语
+            const foundTerms = {};
+            
+            pureTerms.forEach(term => {
+                if (text.includes(term)) {
+                    // 精确边界匹配
+                    const regex = new RegExp(`(?<![\\u4e00-\\u9fa5])${term}(?![\\u4e00-\\u9fa5])`, 'g');
+                    const matches = text.match(regex);
+                    const freq = matches ? matches.length : 1;
+                    
+                    if (freq > 0) {
+                        foundTerms[term] = freq;
+                    }
+                }
+            });
+            
+            // 3. 排序并返回
+            const sorted = Object.entries(foundTerms)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 20)
+                .map(([term, freq]) => ({
+                    zh: term,
+                    freq,
+                    reason: freq >= 5 ? '核心术语' : freq >= 3 ? '高频术语' : '识别术语'
+                }));
+            
+            return sorted;
+        }
+        
+        async function translateTerms(terms) {
+            const results = [];
+            const hasChinese = /[\u4e00-\u9fa5]/.test(terms[0]?.zh || '');
+            const langpair = hasChinese ? 'zh|es' : 'es|zh';
+            
+            for (const term of terms.slice(0, 15)) { // 限制翻译数量
+                try {
+                    const res = await fetch(
+                        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(term.zh)}&langpair=${langpair}`
+                    );
+                    const data = await res.json();
+                    
+                    if (data.responseStatus === 200 && data.responseData?.translatedText) {
+                        results.push({
+                            zh: hasChinese ? term.zh : data.responseData.translatedText,
+                            es: hasChinese ? data.responseData.translatedText : term.zh,
+                            freq: term.freq,
+                            reason: term.reason
+                        });
+                    }
+                } catch (e) {
+                    console.log('翻译失败:', term.zh);
+                }
+                await new Promise(r => setTimeout(r, 300)); // 避免限流
+            }
+            
+            return results;
+        }
+        
+        // ========== 导出功能 ==========
+        function exportData(format) {
+            if (terms.length === 0) {
+                showToast('术语库为空', 'error');
+                return;
+            }
+            
+            let content, filename, type;
+            
+            switch(format) {
+                case 'csv':
+                    content = '\ufeff中文,西班牙语,领域,备注\n' + 
+                        terms.map(t => `"${(t.zh||'').replace(/"/g,'""')}","${(t.es||'').replace(/"/g,'""')}","${t.domain}","${(t.notes||'').replace(/"/g,'""')}"`).join('\n');
+                    filename = `术语库_${new Date().toISOString().slice(0,10)}.csv`;
+                    type = 'text/csv';
+                    break;
+                    
+                case 'xlsx':
+                    // 导出为CSV，Excel可直接打开
+                    content = '\ufeff中文\t西班牙语\t领域\t备注\n' + 
+                        terms.map(t => `${t.zh||''}\t${t.es||''}\t${t.domain}\t${t.notes||''}`).join('\n');
+                    filename = `术语库_${new Date().toISOString().slice(0,10)}.xls`;
+                    type = 'application/vnd.ms-excel';
+                    break;
+                    
+                case 'tbx':
+                    content = `<?xml version="1.0" encoding="UTF-8"?>
+<martif xmlns="urn:iso:std:iso:30042:ed-2">
+    <martifBody>
+        <termCol>
+${terms.map(t => `            <termEntry>
+                <langSet xml:lang="zh-CN"><tig><term>${t.zh||''}</term></tig></langSet>
+                <langSet xml:lang="es"><tig><term>${t.es||''}</term></tig></langSet>
+            </termEntry>`).join('\n')}
+        </termCol>
+    </martifBody>
+</martif>`;
+                    filename = `术语库_${new Date().toISOString().slice(0,10)}.tbx`;
+                    type = 'text/xml';
+                    break;
+                    
+                case 'json':
+                    content = JSON.stringify(terms, null, 2);
+                    filename = `术语库_${new Date().toISOString().slice(0,10)}.json`;
+                    type = 'application/json';
+                    break;
+            }
+            
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast(`已导出 ${format.toUpperCase()} 格式`, 'success');
+        }
+        
+        // 初始化
+        init();
+    </script>
+</body>
+</html>
